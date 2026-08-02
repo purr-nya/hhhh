@@ -27,21 +27,26 @@ jobs:
 
       # This step decodes the base64 keystore stored in GitHub Secrets
       # Make sure to add KEYSTORE_BASE64, STORE_PASSWORD, and KEY_PASSWORD to your repository secrets.
-      - name: Decode Keystore
+      - name: Setup Keystore and Secrets
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          SEC_STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          SEC_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           if [ -n "$KEYSTORE_BASE64" ]; then
-            echo "$KEYSTORE_BASE64" | base64 -d > my-upload-key.jks
+            echo "$KEYSTORE_BASE64" | base64 -d > ${{ github.workspace }}/my-upload-key.jks
+            echo "STORE_PASSWORD=$SEC_STORE_PASSWORD" >> $GITHUB_ENV
+            echo "KEY_PASSWORD=$SEC_KEY_PASSWORD" >> $GITHUB_ENV
           else
-            echo "Warning: KEYSTORE_BASE64 secret is not set. The build may fail if signing is required."
+            echo "Warning: KEYSTORE_BASE64 secret is not set. Generating a temporary keystore."
+            keytool -genkey -v -keystore ${{ github.workspace }}/my-upload-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload -storepass android -keypass android -dname "CN=Dev, OU=Dev, O=Dev, L=Dev, S=Dev, C=US"
+            echo "STORE_PASSWORD=android" >> $GITHUB_ENV
+            echo "KEY_PASSWORD=android" >> $GITHUB_ENV
           fi
 
       - name: Build Release APK
         env:
-          KEYSTORE_PATH: my-upload-key.jks
-          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEYSTORE_PATH: ${{ github.workspace }}/my-upload-key.jks
         run: gradle assembleRelease
 
       - name: Upload Release APK
