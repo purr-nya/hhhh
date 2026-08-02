@@ -23,7 +23,7 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '9.3' # Use a version compatible with the project
+          gradle-version: '9.3.1' # Use a version compatible with the project
 
       # This step decodes the base64 keystore stored in GitHub Secrets
       # Make sure to add KEYSTORE_BASE64, STORE_PASSWORD, and KEY_PASSWORD to your repository secrets.
